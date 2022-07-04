@@ -33,7 +33,7 @@ Partial Class Form1
         Me.DataGridView1.Name = "DataGridView1"
         Me.DataGridView1.RowHeadersWidth = 51
         Me.DataGridView1.RowTemplate.Height = 24
-        Me.DataGridView1.Size = New System.Drawing.Size(776, 409)
+        Me.DataGridView1.Size = New System.Drawing.Size(337, 374)
         Me.DataGridView1.TabIndex = 0
         '
         'Form1
