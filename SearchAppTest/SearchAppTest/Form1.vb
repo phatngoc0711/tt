@@ -27,6 +27,11 @@ Public Class Form1
                 row(j) = vals(j).Trim()
             Next j
             table.Rows.Add(row)
+            '-------------------------
+            If table.Rows.Count > 1 Then
+                Exit For
+            End If
+            '-------------------------
         Next i
 
     End Sub
@@ -36,4 +41,6 @@ Public Class Form1
         form.Show()
 
     End Sub
+
+
 End Class
