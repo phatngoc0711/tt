@@ -3,7 +3,7 @@ Imports System.Text
 Imports System.Text.RegularExpressions
 
 Public Class Form1
-    Private tableDataGrid As New DataTable()
+
     Private appPath As String = Application.StartupPath()
     Private di As New IO.DirectoryInfo(appPath)
     Private aryFileIdx As IO.FileInfo() = di.GetFiles("*.idx")
@@ -64,15 +64,6 @@ Public Class Form1
             Me.ListBox1.SetSelected(i, True)
         Next i
         '-------------------------------------------------------
-        'Datagridview
-        tableDataGrid.Columns.Add("WorkType", Type.GetType("System.String"))
-        tableDataGrid.Columns.Add("Date", Type.GetType("System.String"))
-        tableDataGrid.Columns.Add("Shop CODE", Type.GetType("System.String"))
-        tableDataGrid.Columns.Add("Pos NO", Type.GetType("System.String"))
-        tableDataGrid.Columns.Add("Receipt Code", Type.GetType("System.String"))
-        tableDataGrid.Columns.Add("Manage Code", Type.GetType("System.String"))
-        DataGridView1.DataSource = tableDataGrid
-        '--------------------------------------------------------------------
         'ComboBox
         ComboBox1.Items.Add("9")
         ComboBox1.Items.Add("12")
@@ -81,6 +72,15 @@ Public Class Form1
         ComboBox1.Items.Add("21")
         ComboBox1.Items.Add("24")
         ComboBox1.SelectedIndex = 0
+        'Datagridview
+        Dim tableDataGrid As New DataTable()
+        tableDataGrid.Columns.Add("WorkType", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Date", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Shop CODE", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Pos NO", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Receipt Code", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Manage Code", Type.GetType("System.String"))
+        DataGridView1.DataSource = tableDataGrid
         'TextBox
         TextBox1.TextAlign = HorizontalAlignment.Right
         TextBox1.MaxLength = 4
@@ -231,6 +231,16 @@ Public Class Form1
     End Function
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Dim tableDataGrid As New DataTable()
+        'Datagridview
+        tableDataGrid.Columns.Add("WorkType", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Date", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Shop CODE", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Pos NO", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Receipt Code", Type.GetType("System.String"))
+        tableDataGrid.Columns.Add("Manage Code", Type.GetType("System.String"))
+        DataGridView1.DataSource = tableDataGrid
+        '--------------------------------------------------------------------
 
         'Cancel
         '--------------------------------------------------------------------------
