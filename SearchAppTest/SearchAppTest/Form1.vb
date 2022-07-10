@@ -10,7 +10,7 @@ Public Class Form1
     Private Flag As Integer = 0
     Private workTypeNameFromIniPermanent As New List(Of String)
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        workTypeNameFromIniPermanent = getIniWorkTypeNameLine("[WorkType]", "[WorkTypeDetail]")
+
         'Set key press = true
         Me.KeyPreview = True
         '--------------------
@@ -32,6 +32,7 @@ Public Class Form1
                "Warning")
             Close()
         End If
+        workTypeNameFromIniPermanent = getIniWorkTypeNameLine("[WorkType]", "[WorkTypeDetail]")
         '-------------------------------------------------------
         'WorkType In ListBox
         Dim line() As String
