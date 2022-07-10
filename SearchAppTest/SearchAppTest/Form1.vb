@@ -7,7 +7,10 @@ Public Class Form1
     Private aryFileIdx As IO.FileInfo() = di.GetFiles("*.idx")
     Private workType As New List(Of String)
     Private WorkDetail As New List(Of String)
+    Private Flag As Integer = 0
+    Private workTypeNameFromIniPermanent As New List(Of String)
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        workTypeNameFromIniPermanent = getIniWorkTypeNameLine("[WorkType]", "[WorkTypeDetail]")
         'Set key press = true
         Me.KeyPreview = True
         '--------------------
@@ -94,22 +97,6 @@ Public Class Form1
         TextBox3.Text = 0
         'Block Type RichTextBox
         RichTextBox1.ReadOnly = True
-        'RichtestBox Test
-        Dim demo As List(Of String)
-        demo = getIniWorkTypeNameLine("[WorkType]", "[WorkTypeDetail]")
-        For k As Integer = 0 To demo.Count - 1 Step +1
-            RichTextBox1.AppendText(demo(k))
-            RichTextBox1.AppendText(vbNewLine)
-        Next k
-
-
-        Dim test As New List(Of String)
-        If Not ListBox1.SelectedItems Is Nothing Then
-            For l As Integer = 0 To ListBox1.SelectedItems.Count - 1 Step +1
-                workType.Add(ListBox1.SelectedItems.Item(l).ToString)
-                RichTextBox1.AppendText(workType(l) + Environment.NewLine)
-            Next l
-        End If
     End Sub
     'Get list line tu key1 den key 2 trong file ini co chua dau '='
     Private Function getIniWorkTypeNameLine(Key1 As String, Key2 As String) As List(Of String)
@@ -167,6 +154,10 @@ Public Class Form1
     End Function
     'get ALL line afterSeach By text
     Private Function GetAllLineAfterSearch() As List(Of String)
+        Dim day1 As Date
+        Dim day2 As Date
+        day1 = DateTimePicker1.Value
+        day2 = DateTimePicker2.Value
         Dim key1 As String = TextBox1.Text
         Dim key2 As String = TextBox2.Text
         Dim key3 As String = TextBox3.Text
@@ -184,21 +175,82 @@ Public Class Form1
             Using objReader As New StreamReader(appPath + "\" + aryFileIdx(f).Name)
                 Do While objReader.Peek() <> -1
                     Dim Line As String = objReader.ReadLine()
-                    'Check TextBox--------------------------------------------------------
-                    If lineCheckText(Line, key1, key2, key3) Then
+                    'Check TextBox---------------ListBox---------------DateTime--------------------------
+                    If lineCheckText(Line, key1, key2, key3) And lineCheckListBox(Line) And lineCheckDateTime(Line, day1, day2) Then
                         lineData.Add(Line)
                     End If
                     '---------------------------------------------------------------------
                 Loop
+                objReader.Close()
             End Using
         Next f
         Return lineData
     End Function
+    Private Function lineCheckDateTime(line As String, day1 As Date, day2 As Date) As Boolean
+        Dim vals() As String
+        'val(0) : date value
+        vals = line.ToString().Split("	")
+        Dim flag As String
+        flag = vals(0)
+        Dim dayCheck As Date
+        Dim Year As String
+        Dim Month As String
+        Dim day As String
+        Year = flag(0) + flag(1) + flag(2) + flag(3)
+        Month = flag(4) + flag(5)
+        day = flag(6) + flag(7)
+        dayCheck = New Date(Convert.ToInt32(Year), Convert.ToInt32(Month), Convert.ToInt32(day))
+        If dayCheck >= day1 And dayCheck <= day2 Then
+            Return True
+        End If
+        Return False
+    End Function
+    'Get String tu vi tri so key1 den vi tri so key 2
+    Private Function getString(line As String, key1 As Integer, key2 As Integer) As String
+        Dim result As String = ""
+        For i As Integer = key1 To key2 Step +1
+            result = result + line(i)
+        Next i
+        Return result
+    End Function
+    'Return list WorkTypeId From ListWorkTypeName selected
+    Private Function getIdWorkTypeFromListBox() As List(Of String)
+        Dim listWordTypeId As New List(Of String)
+        Dim lineWorkTypeTemp As New List(Of String)
+        'lineWorkTypeTemp = getIniWorkTypeNameLine("[WorkType]", "[WorkTypeDetail]")
+        For k As Integer = 0 To workTypeNameFromIniPermanent.Count - 1 Step +1
+            lineWorkTypeTemp.Add(workTypeNameFromIniPermanent(k))
+        Next k
+        For j As Integer = 0 To workType.Count - 1 Step +1
+            For i As Integer = 0 To lineWorkTypeTemp.Count - 1 Step +1
+                If lineWorkTypeTemp(i).Contains(workType(j)) Then
+                    listWordTypeId.Add(getString(lineWorkTypeTemp(i), 2, 5))
+                    lineWorkTypeTemp.RemoveAt(i)
+                    i = i - 1
+                    Exit For
+                End If
+            Next i
+        Next j
+        Return listWordTypeId
+    End Function
+    'Check check 1 String co nam trong 1 ListString hay khong
+    Private Function checkStringExistInListString(list As List(Of String), key As String) As Boolean
+        For i As Integer = 0 To list.Count - 1 Step +1
+            If list(i) = key Then
+                Return True
+            End If
+        Next i
+        Return False
+    End Function
     Private Function lineCheckListBox(line As String) As Boolean
         Dim vals() As String
+        'val(5) : id worktype
         vals = line.ToString().Split("	")
-
-        Return False
+        Dim key As String = ""
+        key = getString(vals(5), 0, 3)
+        Dim listListBoxId As New List(Of String)
+        listListBoxId = getIdWorkTypeFromListBox()
+        Return checkStringExistInListString(listListBoxId, key)
     End Function
     Private Function Check(Key1 As String) As Boolean
         If Key1 <> "0" Then
@@ -261,6 +313,11 @@ Public Class Form1
         tableDataGrid.Columns.Add("Manage Code", Type.GetType("System.String"))
         DataGridView1.DataSource = tableDataGrid
         '--------------------------------------------------------------------
+        If Flag Mod 2 = 0 Then
+            Button1.Text = "Search (S)"
+        Else
+            Button1.Text = "Cancel (E)"
+        End If
         'Cancel
         '--------------------------------------------------------------------------
         'Search
@@ -268,14 +325,13 @@ Public Class Form1
         list = GetAllLineAfterSearch()
         Dim valsDataGrid() As String
         For x As Integer = 0 To list.Count - 1 Step +1
-            'If tableDataGrid.Rows.Count > 2999 Then
-            '    MsgBox("Not Over 3000", MsgBoxStyle.OkOnly Or MsgBoxStyle.Exclamation,
-            '        "Warning")
-            '    Exit For
-            'End If
+            If tableDataGrid.Rows.Count > 2999 Then
+                MsgBox("Not Over 3000", MsgBoxStyle.OkOnly Or MsgBoxStyle.Exclamation,
+                    "Warning")
+                Exit For
+            End If
             valsDataGrid = list(x).ToString().Split("	")
             Dim row(valsDataGrid.Length - 5) As String
-
             'row(0) = valsDataGrid(valsDataGrid.Length - 5).Trim()
             Dim typeWordId As String = ""
             typeWordId = valsDataGrid(valsDataGrid.Length - 5).Trim()
@@ -287,9 +343,6 @@ Public Class Form1
                 row(y) = valsDataGrid(y - 1).Trim()
             Next y
             tableDataGrid.Rows.Add(row)
-            If x Mod 2 <> 1 Then
-                DataGridView1.Rows(x).DefaultCellStyle.BackColor = Color.LightGreen
-            End If
         Next x
         Label7.Text = "Total Record: " + tableDataGrid.Rows.Count.ToString
     End Sub
@@ -371,7 +424,6 @@ Public Class Form1
             e.Cancel = True
         End If
     End Sub
-
     Private Sub TextBox1_Click(sender As Object, e As EventArgs) Handles TextBox1.Click
         TextBox1.SelectAll()
     End Sub
@@ -423,27 +475,20 @@ Public Class Form1
             e.Handled = True
         End If
     End Sub
-
     Private Sub ListBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ListBox1.SelectedIndexChanged
         For i = workType.Count - 1 To 0 Step -1
             workType.RemoveAt(i)
         Next
-
         For l As Integer = 0 To ListBox1.SelectedItems.Count - 1 Step +1
             workType.Add(ListBox1.SelectedItems.Item(l).ToString)
-            RichTextBox1.AppendText(workType(l) + Environment.NewLine)
         Next l
-
-
     End Sub
-
     Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem1.Click
-        PrintDialog1.ShowDialog()
-        If PrintDialog1.ShowDialog = Windows.Forms.DialogResult.OK Then
+        'PrintDialog1.ShowDialog()
+        If PrintDialog1.ShowDialog = DialogResult.OK Then
             PrintDocument1.Print()
         End If
     End Sub
-
     Private Sub PrintDocument1_PrintPage(sender As Object, e As Printing.PrintPageEventArgs) Handles PrintDocument1.PrintPage
         Static currentChar As Integer
         Static currentLine As Integer
@@ -505,112 +550,20 @@ Public Class Form1
             currentChar = 0
         End If
     End Sub
-
-
-
-    '-------------------------------Button Search Ban Dau------------------------------- 
-
-    'Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-    '    'Cancel
-
-    '    '---------------------------------------------------------------------------
-    '    Dim tableDataGrid As New DataTable()
-    '    tableDataGrid.Columns.Add("WorkType", Type.GetType("System.String"))
-    '    tableDataGrid.Columns.Add("Date", Type.GetType("System.String"))
-    '    tableDataGrid.Columns.Add("Shop CODE", Type.GetType("System.String"))
-    '    tableDataGrid.Columns.Add("Pos NO", Type.GetType("System.String"))
-    '    tableDataGrid.Columns.Add("Receipt Code", Type.GetType("System.String"))
-    '    tableDataGrid.Columns.Add("Manage Code", Type.GetType("System.String"))
-    '    DataGridView1.DataSource = tableDataGrid
-    '    '----------------------------------------------------------------------------
-    '    Dim lineDataGrid() As String
-    '    Dim valsDataGrid() As String
-    '    Dim Flag As Integer = 0
-    '    For f As Integer = 0 To aryFileIdx.Length - 1 Step +1
-    '        'lineDataGrid = File.ReadAllLines(appPath + "\20110501_20110531.IDX")
-    '        lineDataGrid = File.ReadAllLines(appPath + "\" + aryFileIdx(f).Name)
-    '        For x As Integer = 0 To lineDataGrid.Length - 1 Step +1
-    '            If tableDataGrid.Rows.Count > 2999 Then
-    '                Flag = 1
-    '                Exit For
-    '            End If
-    '            valsDataGrid = lineDataGrid(x).ToString().Split("	")
-    '            Dim row(valsDataGrid.Length - 5) As String
-
-
-    '            'row(0) = valsDataGrid(valsDataGrid.Length - 5).Trim()
-    '            Dim typeWordId As String = ""
-    '            typeWordId = valsDataGrid(valsDataGrid.Length - 5).Trim()
-    '            Dim lineWordDetail As List(Of String)
-    '            lineWordDetail = getIniWorkTypeNameLine("[WorkTypeDetail]", "[DenpyoType]")
-    '            row(0) = getIniWorkTypeName(lineWordDetail, typeWordId)
-    '            '-------------------------------------------------------------------
-    '            For y As Integer = 1 To valsDataGrid.Length - 5 Step +1
-    '                row(y) = valsDataGrid(y - 1).Trim()
-    '            Next y
-
-    '            tableDataGrid.Rows.Add(row)
-    '            If x Mod 2 <> 1 Then
-    '                DataGridView1.Rows(x).DefaultCellStyle.BackColor = Color.LightGreen
-    '            End If
-    '        Next x
-    '        If Flag = 1 Then
-    '            MsgBox("Not Over 3000", MsgBoxStyle.OkOnly Or MsgBoxStyle.Exclamation,
-    '                "Warning")
-    '            Exit For
-    '        End If
-    '    Next f
-    '    Label7.Text = "Total Record: " + tableDataGrid.Rows.Count.ToString
-    'End Sub
-
-
-    'Tim ra nhung line co Chua Key 2 
-    ' Dua line nay thay the cho line o ben tren datagrid view
-    'Du lieu dau vao la key (TEXTBOX)
-    'Private Function getDataLineAfterSearch(Key2 As String) As List(Of String)
-    '    Dim lineData As New List(Of String)
-    '    Dim lineDataGrid() As String
-    '    Dim vals() As String
-    '    For f As Integer = 0 To aryFileIdx.Length - 1 Step +1
-    '        lineDataGrid = File.ReadAllLines(appPath + "\" + aryFileIdx(f).Name)
-    '        For x As Integer = 0 To lineDataGrid.Length - 1 Step +1
-    '            vals = lineDataGrid(x).ToString().Split("	")
-
-    '            If vals(3).Trim() = Key2 Then
-    '                lineData.Add(lineDataGrid(x))
-    '            End If
-    '        Next x
-    '    Next f
-
-    '    Return lineData
-    'End Function
-
-    'Get ALL line trong tat ca file idx
-    'Private Function GetAllLine() As List(Of String)
-    '    Dim lineData As New List(Of String)
-    '    Dim lineDataGrid() As String
-    '    For f As Integer = 0 To aryFileIdx.Length - 1 Step +1
-    '        lineDataGrid = File.ReadAllLines(appPath + "\" + aryFileIdx(f).Name)
-    '        For x As Integer = 0 To lineDataGrid.Length - 1 Step +1
-
-    '            lineData.Add(lineDataGrid(x))
-    '        Next x
-    '    Next f
-    '    Return lineData
-    'End Function
-
-    'Get All line trong idx
-    'Private Function GetAllLine() As List(Of String)
-    '    Dim lineData As New List(Of String)
-
-    '    For f As Integer = 0 To aryFileIdx.Length - 1 Step +1
-    '        Using objReader As New StreamReader(appPath + "\" + aryFileIdx(f).Name)
-    '            Do While objReader.Peek() <> -1
-    '                Dim splitLine As String = objReader.ReadLine()
-    '                lineData.Add(splitLine)
-    '            Loop
-    '        End Using
-    '    Next f
-    '    Return lineData
-    'End Function
+    Private Sub DataGridView1_Sorted(sender As Object, e As EventArgs) Handles DataGridView1.Sorted
+        If DataGridView1.RowCount > 1 Then
+            For i As Integer = 0 To DataGridView1.Rows.Count - 1
+                DataGridView1.Rows(i).DefaultCellStyle.BackColor = Color.LightGreen
+                i = i + 1
+            Next
+        End If
+    End Sub
+    Private Sub DataGridView1_DataBindingComplete(sender As Object, e As DataGridViewBindingCompleteEventArgs) Handles DataGridView1.DataBindingComplete
+        If DataGridView1.RowCount > 1 Then
+            For i As Integer = 0 To DataGridView1.Rows.Count - 2
+                DataGridView1.Rows(i).DefaultCellStyle.BackColor = Color.LightGreen
+                i = i + 1
+            Next
+        End If
+    End Sub
 End Class
