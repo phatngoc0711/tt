@@ -5,12 +5,14 @@ Public Class Form1
     Private appPath As String = Application.StartupPath()
     Private di As New IO.DirectoryInfo(appPath)
     Private aryFileIdx As IO.FileInfo() = di.GetFiles("*.idx")
+    Private pathDataFile As New IO.DirectoryInfo(appPath + "\DATA")
+    Private aryFileDAT As IO.FileInfo() = pathDataFile.GetFiles("*.DAT")
     Private workType As New List(Of String)
     Private WorkDetail As New List(Of String)
     Private Flag As Integer = 0
     Private workTypeNameFromIniPermanent As New List(Of String)
+    Private listDataGridView As New List(Of String)
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-
         'Set key press = true
         Me.KeyPreview = True
         '--------------------
@@ -332,6 +334,7 @@ Public Class Form1
                 Exit For
             End If
             valsDataGrid = list(x).ToString().Split("	")
+            listDataGridView.Add(list(x))
             Dim row(valsDataGrid.Length - 5) As String
             'row(0) = valsDataGrid(valsDataGrid.Length - 5).Trim()
             Dim typeWordId As String = ""
@@ -393,8 +396,11 @@ Public Class Form1
         If Control.ModifierKeys = Keys.Alt Then
             If e.KeyCode = Keys.Y Then
                 e.Handled = True
-                Dim frm As New Form2
-                frm.Show()
+                If Not RichTextBox1.Text = "" Then
+                    If PrintDialog1.ShowDialog = DialogResult.OK Then
+                        PrintDocument1.Print()
+                    End If
+                End If
             End If
         End If
         If Control.ModifierKeys = Keys.Alt Then
@@ -453,7 +459,7 @@ Public Class Form1
         End If
     End Sub
     Private Sub TextBox1_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox1.KeyPress
-        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Delete) And Not e.KeyChar = Chr(Keys.Back) Then
+        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Back) Then
             e.Handled = True
         End If
         If TextBox1.TextLength = 1 And e.KeyChar = "0" And TextBox1.Text = "0" Then
@@ -461,7 +467,7 @@ Public Class Form1
         End If
     End Sub
     Private Sub TextBox2_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox2.KeyPress
-        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Delete) And Not e.KeyChar = Chr(Keys.Back) Then
+        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Back) Then
             e.Handled = True
         End If
         If TextBox1.TextLength = 1 And e.KeyChar = "0" And TextBox2.Text = "0" Then
@@ -469,7 +475,7 @@ Public Class Form1
         End If
     End Sub
     Private Sub TextBox3_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox3.KeyPress
-        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Delete) And Not e.KeyChar = Chr(Keys.Back) Then
+        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Back) Then
             e.Handled = True
         End If
         If TextBox1.TextLength = 1 And e.KeyChar = "0" And TextBox3.Text = "0" Then
@@ -486,8 +492,10 @@ Public Class Form1
     End Sub
     Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem1.Click
         'PrintDialog1.ShowDialog()
-        If PrintDialog1.ShowDialog = DialogResult.OK Then
-            PrintDocument1.Print()
+        If Not RichTextBox1.Text = "" Then
+            If PrintDialog1.ShowDialog = DialogResult.OK Then
+                PrintDocument1.Print()
+            End If
         End If
     End Sub
     Private Sub PrintDocument1_PrintPage(sender As Object, e As Printing.PrintPageEventArgs) Handles PrintDocument1.PrintPage
@@ -553,7 +561,7 @@ Public Class Form1
     End Sub
     Private Sub DataGridView1_Sorted(sender As Object, e As EventArgs) Handles DataGridView1.Sorted
         If DataGridView1.RowCount > 1 Then
-            For i As Integer = 0 To DataGridView1.Rows.Count - 1
+            For i As Integer = 0 To DataGridView1.Rows.Count - 2
                 DataGridView1.Rows(i).DefaultCellStyle.BackColor = Color.LightGreen
                 i = i + 1
             Next
@@ -565,6 +573,238 @@ Public Class Form1
                 DataGridView1.Rows(i).DefaultCellStyle.BackColor = Color.LightGreen
                 i = i + 1
             Next
+        End If
+    End Sub
+    Private Function DeleteChar0(key As String) As String
+        Dim value As String = ""
+        Dim flag As Integer = 0
+        For i As Integer = 0 To key.Length - 1 Step +1
+            If key(i) <> "0" Then
+                flag = i
+                Exit For
+            End If
+        Next
+        For j As Integer = flag To key.Length - 1 Step +1
+            value = value + key(j)
+        Next j
+        Return value
+    End Function
+    Private Function dayFormat(key As String) As String
+        Dim value As String = ""
+        value = key(0) + key(1) + key(2) + key(3) + "/" + key(4) + key(5) + "/" + key(6) + key(7)
+        Return value
+    End Function
+    Private Sub DataGridView1_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridView1.CellClick
+        RichTextBox1.Clear()
+        'Dim list As System.Collections.ObjectModel.
+        ' ReadOnlyCollection(Of String)
+        'list = My.Computer.FileSystem.FindInFiles(appPath + "\", DataGridView1.Rows(DataGridView1.CurrentRow.Index).Cells("Manage Code").Value.ToString, True, FileIO.SearchOption.SearchTopLevelOnly)
+        ''--------------------------------------------------------
+        Dim value() As String
+        'Dim line() As String
+        'line = File.ReadAllLines(list(0))
+        'For m As Integer = 0 To line.Length - 1 Step +1
+        '    If line(m).Contains(DataGridView1.Rows(DataGridView1.CurrentRow.Index).Cells("Manage Code").Value.ToString) Then
+        '        value = line(m).ToString.Split("	")
+        '    End If
+        'Next m
+        If aryFileDAT.Length > 0 Then
+            value = listDataGridView(DataGridView1.CurrentRow.Index).Split("	")
+            Dim Start As String
+            Dim count As String
+            Dim link As String
+            Start = value(8)
+            count = value(9)
+            link = value(7)
+            '-----------------------------------------------------------
+            Dim lineData() As String
+            lineData = File.ReadAllLines(appPath + "\" + link)
+            'Dong 0 
+            Dim line0 As String = lineData(Convert.ToInt32(Start) - 1)
+            Dim val0() As String = line0.ToString.Split("	")
+            'Dong 1
+            Dim line1 As New List(Of String)
+            For temp As Integer = Convert.ToInt32(Start) To Convert.ToInt32(Start) + Convert.ToInt32(count) - 2 Step +1
+                Dim valline1() As String
+                valline1 = lineData(temp).Split("	")
+                If valline1(0) = "1" Then
+                    line1.Add(lineData(temp))
+                End If
+            Next temp
+            'Dong 2 
+            Dim line2 As New List(Of String)
+            For tempLine2 As Integer = Convert.ToInt32(Start) + line2.Count To Convert.ToInt32(Start) + Convert.ToInt32(count) - 2 Step +1
+                Dim valline2() As String
+                valline2 = lineData(tempLine2).Split("	")
+                If valline2(0) = "2" Then
+                    line2.Add(lineData(tempLine2))
+                End If
+            Next tempLine2
+            'Dong 3
+            Dim line3 As String = lineData(Convert.ToInt32(Start) + Convert.ToInt32(count) - 2)
+            Dim val3() As String = line3.ToString.Split("	")
+
+            Dim i As Integer
+            With DataGridView1
+                If e.RowIndex >= 0 Then
+                    i = .CurrentRow.Index
+                    RichTextBox1.AppendText(" [" + .Rows(i).Cells("WorkType").Value.ToString + "] ")
+                    RichTextBox1.AppendText(.Rows(i).Cells("Shop CODE").Value.ToString + "-")
+                    RichTextBox1.AppendText(.Rows(i).Cells("Pos NO").Value.ToString + "-")
+                    RichTextBox1.AppendText(.Rows(i).Cells("Receipt Code").Value.ToString + Environment.NewLine)
+                    RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                    RichTextBox1.AppendText("Store Name                         :" + val0(9) + Environment.NewLine)
+                    RichTextBox1.AppendText("POS NO                    : " + DeleteChar0(.Rows(i).Cells("Pos NO").Value.ToString) + Environment.NewLine)
+                    RichTextBox1.AppendText("Receipt Code             : " + DeleteChar0(.Rows(i).Cells("Receipt Code").Value.ToString) + Environment.NewLine)
+                    RichTextBox1.AppendText("Work Day                  : " + dayFormat(.Rows(i).Cells("Date").Value.ToString) + Environment.NewLine)
+                    RichTextBox1.AppendText("Pos DayTime               : " + val0(6) + Environment.NewLine)
+                    RichTextBox1.AppendText("CD Staff                  : " + val0(15) + Environment.NewLine)
+                    RichTextBox1.AppendText("Name Staff                : " + val0(16) + Environment.NewLine)
+                    RichTextBox1.AppendText("CD Customer               : " + Environment.NewLine)
+                    RichTextBox1.AppendText("Name Customer             : " + Environment.NewLine)
+                    RichTextBox1.AppendText("Total Transaction         : " + line1.Count.ToString + Environment.NewLine)
+                    RichTextBox1.AppendText("Total Money               : " + val0(19) + Environment.NewLine)
+                    RichTextBox1.AppendText("Tổng phụ                  : " + val0(20) + Environment.NewLine)
+                    RichTextBox1.AppendText("Tiền đưa                  : " + val0(21) + Environment.NewLine)
+                    RichTextBox1.AppendText("Tiền thối                 : " + val0(22) + Environment.NewLine)
+                    RichTextBox1.AppendText("Không bao gồm thuế        : " + val0(23) + Environment.NewLine)
+                    RichTextBox1.AppendText("Tiền thuế                 : " + val0(23) + Environment.NewLine)
+                    RichTextBox1.AppendText("Điểm sử dụng              : " + Environment.NewLine)
+                    RichTextBox1.AppendText("Điểm cộng                 : " + Environment.NewLine)
+                    RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+
+                    For l1 As Integer = 0 To line1.Count - 1 Step +1
+                        Dim valline2() As String
+                        valline2 = line1(l1).Split("	")
+                        RichTextBox1.AppendText("ID item                : " + (l1 + 1).ToString + Environment.NewLine)
+                        RichTextBox1.AppendText("ID PLU                 : " + valline2(12) + Environment.NewLine)
+                        RichTextBox1.AppendText("Item Name              : " + valline2(10) + Environment.NewLine)
+                        RichTextBox1.AppendText("Tax Type               : " + valline2(11) + Environment.NewLine)
+                        RichTextBox1.AppendText("Số lượng đã bán        : " + valline2(7) + Environment.NewLine)
+                        RichTextBox1.AppendText("Giá bán sau chiết khấu : " + valline2(8) + Environment.NewLine)
+                        RichTextBox1.AppendText("Tiền chiết khấu        : " + valline2(9) + Environment.NewLine)
+                        RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                    Next l1
+
+                    For l2 As Integer = 0 To line2.Count - 1 Step +1
+                        Dim valline2() As String
+                        valline2 = line2(l2).Split("	")
+                        RichTextBox1.AppendText("Loaị Thanh Toán        : " + valline2(11) + Environment.NewLine)
+                        RichTextBox1.AppendText("Số Tiền                : " + valline2(5) + Environment.NewLine)
+                        RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                    Next l2
+                    RichTextBox1.AppendText("Chiết khấu             : " + val3(7) + Environment.NewLine)
+                    RichTextBox1.AppendText("Số Tiền                : " + val3(5) + Environment.NewLine)
+                End If
+            End With
+        Else
+            MsgBox("Not Found DATA FILE", MsgBoxStyle.OkOnly Or MsgBoxStyle.Critical,
+               "Warning")
+        End If
+
+    End Sub
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        Dim fontSize As String
+        fontSize = ComboBox1.SelectedItem.ToString
+        RichTextBox1.Font = New Font("MS UI Gothic", Convert.ToInt32(fontSize), FontStyle.Regular)
+    End Sub
+    Private Sub ComboBox1_KeyPress(sender As Object, e As KeyPressEventArgs) Handles ComboBox1.KeyPress
+        If Not Char.IsDigit(e.KeyChar) And Not e.KeyChar = Chr(Keys.Back) Then
+            e.Handled = True
+        End If
+    End Sub
+    Private Sub DataGridView1_KeyUp(sender As Object, e As KeyEventArgs) Handles DataGridView1.KeyUp
+        'RichTextBox1.Clear()
+        'RichTextBox1.AppendText(DataGridView1.CurrentRow.Index)
+        RichTextBox1.Clear()
+        Dim value() As String
+        If aryFileDAT.Length > 0 Then
+            value = listDataGridView(DataGridView1.CurrentRow.Index).Split("	")
+            Dim Start As String
+            Dim count As String
+            Dim link As String
+            Start = value(8)
+            count = value(9)
+            link = value(7)
+            '-----------------------------------------------------------
+            Dim lineData() As String
+            lineData = File.ReadAllLines(appPath + "\" + link)
+            'Dong 0 
+            Dim line0 As String = lineData(Convert.ToInt32(Start) - 1)
+            Dim val0() As String = line0.ToString.Split("	")
+            'Dong 1
+            Dim line1 As New List(Of String)
+            For temp As Integer = Convert.ToInt32(Start) To Convert.ToInt32(Start) + Convert.ToInt32(count) - 2 Step +1
+                Dim valline1() As String
+                valline1 = lineData(temp).Split("	")
+                If valline1(0) = "1" Then
+                    line1.Add(lineData(temp))
+                End If
+            Next temp
+            'Dong 2 
+            Dim line2 As New List(Of String)
+            For tempLine2 As Integer = Convert.ToInt32(Start) + line2.Count To Convert.ToInt32(Start) + Convert.ToInt32(count) - 2 Step +1
+                Dim valline2() As String
+                valline2 = lineData(tempLine2).Split("	")
+                If valline2(0) = "2" Then
+                    line2.Add(lineData(tempLine2))
+                End If
+            Next tempLine2
+            'Dong 3
+            Dim line3 As String = lineData(Convert.ToInt32(Start) + Convert.ToInt32(count) - 2)
+            Dim val3() As String = line3.ToString.Split("	")
+            Dim i As Integer
+            With DataGridView1
+                i = .CurrentRow.Index
+                RichTextBox1.AppendText(" [" + .Rows(i).Cells("WorkType").Value.ToString + "] ")
+                RichTextBox1.AppendText(.Rows(i).Cells("Shop CODE").Value.ToString + "-")
+                RichTextBox1.AppendText(.Rows(i).Cells("Pos NO").Value.ToString + "-")
+                RichTextBox1.AppendText(.Rows(i).Cells("Receipt Code").Value.ToString + Environment.NewLine)
+                RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                RichTextBox1.AppendText("Store Name                         :" + val0(9) + Environment.NewLine)
+                RichTextBox1.AppendText("POS NO                    : " + DeleteChar0(.Rows(i).Cells("Pos NO").Value.ToString) + Environment.NewLine)
+                RichTextBox1.AppendText("Receipt Code             : " + DeleteChar0(.Rows(i).Cells("Receipt Code").Value.ToString) + Environment.NewLine)
+                RichTextBox1.AppendText("Work Day                  : " + dayFormat(.Rows(i).Cells("Date").Value.ToString) + Environment.NewLine)
+                RichTextBox1.AppendText("Pos DayTime               : " + val0(6) + Environment.NewLine)
+                RichTextBox1.AppendText("CD Staff                  : " + val0(15) + Environment.NewLine)
+                RichTextBox1.AppendText("Name Staff                : " + val0(16) + Environment.NewLine)
+                RichTextBox1.AppendText("CD Customer               : " + Environment.NewLine)
+                RichTextBox1.AppendText("Name Customer             : " + Environment.NewLine)
+                RichTextBox1.AppendText("Total Transaction         : " + line1.Count.ToString + Environment.NewLine)
+                RichTextBox1.AppendText("Total Money               : " + val0(19) + Environment.NewLine)
+                RichTextBox1.AppendText("Tổng phụ                  : " + val0(20) + Environment.NewLine)
+                RichTextBox1.AppendText("Tiền đưa                  : " + val0(21) + Environment.NewLine)
+                RichTextBox1.AppendText("Tiền thối                 : " + val0(22) + Environment.NewLine)
+                RichTextBox1.AppendText("Không bao gồm thuế        : " + val0(23) + Environment.NewLine)
+                RichTextBox1.AppendText("Tiền thuế                 : " + val0(23) + Environment.NewLine)
+                RichTextBox1.AppendText("Điểm sử dụng              : " + Environment.NewLine)
+                RichTextBox1.AppendText("Điểm cộng                 : " + Environment.NewLine)
+                RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                For l1 As Integer = 0 To line1.Count - 1 Step +1
+                    Dim valline2() As String
+                    valline2 = line1(l1).Split("	")
+                    RichTextBox1.AppendText("ID item                : " + (l1 + 1).ToString + Environment.NewLine)
+                    RichTextBox1.AppendText("ID PLU                 : " + valline2(12) + Environment.NewLine)
+                    RichTextBox1.AppendText("Item Name              : " + valline2(10) + Environment.NewLine)
+                    RichTextBox1.AppendText("Tax Type               : " + valline2(11) + Environment.NewLine)
+                    RichTextBox1.AppendText("Số lượng đã bán        : " + valline2(7) + Environment.NewLine)
+                    RichTextBox1.AppendText("Giá bán sau chiết khấu : " + valline2(8) + Environment.NewLine)
+                    RichTextBox1.AppendText("Tiền chiết khấu        : " + valline2(9) + Environment.NewLine)
+                    RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                Next l1
+                For l2 As Integer = 0 To line2.Count - 1 Step +1
+                    Dim valline2() As String
+                    valline2 = line2(l2).Split("	")
+                    RichTextBox1.AppendText("Loaị Thanh Toán        : " + valline2(11) + Environment.NewLine)
+                    RichTextBox1.AppendText("Số Tiền                : " + valline2(5) + Environment.NewLine)
+                    RichTextBox1.AppendText("------------------------------------------------" + Environment.NewLine)
+                Next l2
+                RichTextBox1.AppendText("Chiết khấu             : " + val3(7) + Environment.NewLine)
+                RichTextBox1.AppendText("Số Tiền                : " + val3(5) + Environment.NewLine)
+            End With
+        Else
+            MsgBox("Not Found DATA FILE", MsgBoxStyle.OkOnly Or MsgBoxStyle.Critical,
+               "Warning")
         End If
     End Sub
 End Class
